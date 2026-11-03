@@ -26,6 +26,25 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+      - name: Connect to private model gateway
+        uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c
+        with:
+          oauth-client-id: Tz5sLpf2EH11CNTRL-kQZp5m8YYK11CNTRL
+          audience: api.tailscale.com/Tz5sLpf2EH11CNTRL-kQZp5m8YYK11CNTRL
+          tags: tag:pullfrog-ci
+          version: latest
+      - name: Verify private gateway connection
+        shell: bash
+        run: |
+          gateway_status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+            --retry 6 --retry-all-errors --retry-delay 5 \
+            --output /dev/null --write-out '%{http_code}' \
+            https://chases-macbook-pro.tail882147.ts.net:8317/v1/models)
+          if [ "$gateway_status" != "401" ]; then
+            echo "Private gateway returned unexpected HTTP status: $gateway_status"
+            exit 1
+          fi
+          echo 'Private gateway is reachable and requires authentication.'
       - name: Run agent
         uses: pullfrog/pullfrog@v0
         with:
